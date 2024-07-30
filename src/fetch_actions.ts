@@ -1,7 +1,8 @@
 import fs from 'fs/promises';
-import { Mina, PrivateKey } from 'o1js';
+import { Mina, NetworkId, PrivateKey } from 'o1js';
 import {
   OneFieldActionDispatcher,
+  StructActionDispatcher,
   TenFieldActionDispatcher,
   ThreeFieldActionDispatcher,
 } from './Dispatchers.js';
@@ -13,6 +14,12 @@ if (!deployAlias)
 Usage:
 node build/src/interact.js <deployAlias>
 `);
+
+const isLightnet = deployAlias.includes('light');
+const isOne = deployAlias.includes('one');
+const isThreee = deployAlias.includes('three');
+const isTen = deployAlias.includes('ten');
+const isStruct = deployAlias.includes('struct');
 
 type Config = {
   deployAliases: Record<
@@ -37,25 +44,44 @@ let zkAppKey = PrivateKey.fromBase58(zkAppKeysBase58.privateKey);
 let zkAppAddress = zkAppKey.toPublicKey();
 
 let zkApp;
-if (deployAlias.slice(0, 3) == 'one') {
+if (isOne) {
+  console.log('OneFieldActionDispatcher');
   zkApp = new OneFieldActionDispatcher(zkAppAddress);
-} else if (deployAlias.slice(0, 5) == 'three') {
+  await OneFieldActionDispatcher.compile();
+} else if (isThreee) {
+  console.log('ThreeFieldActionDispatcher');
   zkApp = new ThreeFieldActionDispatcher(zkAppAddress);
-} else if (deployAlias.slice(0, 3) == 'ten') {
+  await ThreeFieldActionDispatcher.compile();
+} else if (isTen) {
+  console.log('TenFieldActionDispatcher');
   zkApp = new TenFieldActionDispatcher(zkAppAddress);
+  await TenFieldActionDispatcher.compile();
+} else if (isStruct) {
+  console.log('StructActionDispatcher');
+  zkApp = new StructActionDispatcher(zkAppAddress);
+  await StructActionDispatcher.compile();
 } else {
   throw Error('Wrong contract name. Should be One, Three, Ten');
 }
 
-const Network = Mina.Network({
-  // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
-  // This is to ensure the backward compatibility.
-  // networkId: (config.networkId ?? DEFAULT_NETWORK_ID) as NetworkId,
-  // mina: config.url,
-  mina: 'http://localhost:8080/graphql',
-  archive: 'http://localhost:8282',
-  lightnetAccountManager: 'http://localhost:8181',
-});
+let Network;
+if (isLightnet) {
+  Network = Mina.Network({
+    // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
+    // This is to ensure the backward compatibility.
+    mina: 'http://localhost:8080/graphql',
+    archive: 'http://localhost:8282',
+    lightnetAccountManager: 'http://localhost:8181',
+  });
+} else {
+  Network = Mina.Network({
+    // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
+    // This is to ensure the backward compatibility.
+    networkId: config.networkId as NetworkId,
+    archive: 'https://api.minascan.io/archive/devnet/v1/graphql',
+    mina: config.url,
+  });
+}
 
 Mina.setActiveInstance(Network);
 

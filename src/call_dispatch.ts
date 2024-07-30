@@ -16,6 +16,7 @@ import fs from 'fs/promises';
 import { Lightnet, Mina, NetworkId, PrivateKey } from 'o1js';
 import {
   OneFieldActionDispatcher,
+  StructActionDispatcher,
   TenFieldActionDispatcher,
   ThreeFieldActionDispatcher,
 } from './Dispatchers.js';
@@ -28,6 +29,12 @@ if (!deployAlias)
 Usage:
 node build/src/interact.js <deployAlias>
 `);
+
+const isLightnet = deployAlias.includes('light');
+const isOne = deployAlias.includes('one');
+const isThreee = deployAlias.includes('three');
+const isTen = deployAlias.includes('ten');
+const isStruct = deployAlias.includes('struct');
 
 let dispatchAmountPerBlockStr = process.argv[3];
 let dispatchAmountPerBlock = 0;
@@ -68,16 +75,23 @@ let zkAppKeysBase58: { privateKey: string; publicKey: string } = JSON.parse(
 let feepayerKey = PrivateKey.fromBase58(feepayerKeysBase58.privateKey);
 let zkAppKey = PrivateKey.fromBase58(zkAppKeysBase58.privateKey);
 
-// set up Mina instance and contract we interact with
-const Network = Mina.Network({
-  // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
-  // This is to ensure the backward compatibility.
-  networkId: (config.networkId ?? DEFAULT_NETWORK_ID) as NetworkId,
-  mina: config.url,
-  // mina: 'http://localhost:8080/graphql',
-  // archive: 'http://localhost:8282',
-  // lightnetAccountManager: 'http://localhost:8181',
-});
+let Network;
+if (isLightnet) {
+  Network = Mina.Network({
+    // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
+    // This is to ensure the backward compatibility.
+    mina: 'http://localhost:8080/graphql',
+    archive: 'http://localhost:8282',
+    lightnetAccountManager: 'http://localhost:8181',
+  });
+} else {
+  Network = Mina.Network({
+    // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
+    // This is to ensure the backward compatibility.
+    networkId: (config.networkId ?? DEFAULT_NETWORK_ID) as NetworkId,
+    mina: config.url,
+  });
+}
 // const Network = Mina.Network(config.url);
 const fee = Number(config.fee) * 1e9; // in nanomina (1 billion = 1.0 mina)
 Mina.setActiveInstance(Network);
@@ -86,13 +100,12 @@ let feePayers = [
   { publicKey: feepayerKey.toPublicKey(), privateKey: feepayerKey },
 ];
 
-if (deployAlias.includes('light')) {
+if (isLightnet) {
   feePayers = [];
   for (let i = 0; i < dispatchAmountPerBlock; i++) {
     feePayers.push(await Lightnet.acquireKeyPair());
   }
 }
-
 let feepayerAddress = feepayerKey.toPublicKey();
 let zkAppAddress = zkAppKey.toPublicKey();
 
@@ -101,24 +114,24 @@ let zkApp: {
   dispatch(): Promise<any>;
 };
 
-if (deployAlias.slice(0, 3) == 'one') {
+if (isOne) {
+  console.log('OneFieldActionDispatcher');
   zkApp = new OneFieldActionDispatcher(zkAppAddress);
-} else if (deployAlias.slice(0, 5) == 'three') {
+  await OneFieldActionDispatcher.compile();
+} else if (isThreee) {
+  console.log('ThreeFieldActionDispatcher');
   zkApp = new ThreeFieldActionDispatcher(zkAppAddress);
-} else if (deployAlias.slice(0, 3) == 'ten') {
+  await ThreeFieldActionDispatcher.compile();
+} else if (isTen) {
+  console.log('TenFieldActionDispatcher');
   zkApp = new TenFieldActionDispatcher(zkAppAddress);
+  await TenFieldActionDispatcher.compile();
+} else if (isStruct) {
+  console.log('StructActionDispatcher');
+  zkApp = new StructActionDispatcher(zkAppAddress);
+  await StructActionDispatcher.compile();
 } else {
   throw Error('Wrong contract name. Should be One, Three, Ten');
-}
-
-// compile the contract to create prover keys
-console.log('compile the contract...');
-if (deployAlias == 'one') {
-  await OneFieldActionDispatcher.compile();
-} else if (deployAlias.slice(0, 5) == 'three') {
-  await ThreeFieldActionDispatcher.compile();
-} else if (deployAlias.slice(0, 3) == 'ten') {
-  await TenFieldActionDispatcher.compile();
 }
 
 try {
@@ -126,13 +139,15 @@ try {
   for (let i = 0; i < dispatchAmountPerBlock; i++) {
     let payer = feePayers[i % feePayers.length];
     let tx = await Mina.transaction(
-      { sender: payer.publicKey, fee: fee * i },
+      { sender: payer.publicKey, fee: fee },
       async () => {
         await zkApp.dispatch();
       }
     );
 
     await tx.prove();
+
+    console.log(`Tx ${i} payer: ${payer.publicKey.toBase58()}`);
 
     txs.push({ tx, privateKey: payer.privateKey });
   }
