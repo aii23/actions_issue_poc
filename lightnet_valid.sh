@@ -4,7 +4,7 @@ zk lightnet stop
 
 zk lightnet start
 
-zk deploy validstruct_lightnet
+zk deploy -y validstruct_lightnet
 
 echo 'Sleep one minute after deploy'
 

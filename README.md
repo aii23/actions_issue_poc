@@ -1,24 +1,41 @@
 # Mina zkApp: Action_bug_poc
 
-This template uses TypeScript.
+Scripts for reproducing "Failed to derive correct actions hash".
+Seems like this.sender.getAndRequireSignature() is the issue.
+Here we provide two contracts:
+
+1. Dispatch actions with current sender (with this.sender.getAndRequireSignature()). It's fails.
+2. Dispatch actions with predefined sender. It run succesfully.
+
+Issue ocured when 3 or more transactions with actions gets into one block.
 
 ## How to build
 
 ```sh
+npm install
 npm run build
 ```
 
-## How to run tests
+## Configure deployment
+
+If you do not have lightnetDeployer, run
 
 ```sh
-npm run test
-npm run testw # watch mode
+zk config --lightnet
 ```
 
-## How to run coverage
+And then change `<your fee payer key>` in config.json with a path to your lightnet fee payer. It can be found in config.json `lightnet1` `feepayerKeyPath`
+
+## How to reproduce bug
 
 ```sh
-npm run coverage
+./lightnet_reproduce.sh
+```
+
+## How to check valid struct(with no getAndRequireSignature)
+
+```sh
+./lightnet_valid.sh
 ```
 
 ## License
