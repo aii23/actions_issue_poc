@@ -73,22 +73,34 @@ export class Ticket extends Struct({
 //   }
 // }
 
-export class Ticket2 extends Struct({
+export class AddressStruct extends Struct({
   v1: PublicKey,
 }) {
-  static from(v1: PublicKey): Ticket2 {
-    return new Ticket2({
+  static from(v1: PublicKey): AddressStruct {
+    return new AddressStruct({
       v1,
     });
   }
 }
 
-export class StructActionDispatcher extends SmartContract {
-  reducer = Reducer({ actionType: Ticket2 });
+export class BrokenStructActionDispatcher extends SmartContract {
+  reducer = Reducer({ actionType: AddressStruct });
 
   @method async dispatch() {
     let address = this.sender.getAndRequireSignature();
 
-    this.reducer.dispatch(Ticket2.from(address));
+    this.reducer.dispatch(AddressStruct.from(address));
+  }
+}
+
+export class ValidStructActionDispatcher extends SmartContract {
+  reducer = Reducer({ actionType: AddressStruct });
+
+  @method async dispatch() {
+    let address = PublicKey.fromBase58(
+      'B62qj3DYVUCaTrDnFXkJW34xHUBr9zUorg72pYN3BJTGB4KFdpYjxxQ'
+    );
+
+    this.reducer.dispatch(AddressStruct.from(address));
   }
 }

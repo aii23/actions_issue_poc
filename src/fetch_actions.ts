@@ -1,10 +1,11 @@
 import fs from 'fs/promises';
 import { Mina, NetworkId, PrivateKey } from 'o1js';
 import {
+  BrokenStructActionDispatcher,
   OneFieldActionDispatcher,
-  StructActionDispatcher,
   TenFieldActionDispatcher,
   ThreeFieldActionDispatcher,
+  ValidStructActionDispatcher,
 } from './Dispatchers.js';
 
 let deployAlias = process.argv[2];
@@ -19,7 +20,8 @@ const isLightnet = deployAlias.includes('light');
 const isOne = deployAlias.includes('one');
 const isThreee = deployAlias.includes('three');
 const isTen = deployAlias.includes('ten');
-const isStruct = deployAlias.includes('struct');
+const isBrokenStruct = deployAlias.includes('brokenstruct');
+const isValidStruct = deployAlias.includes('validstruct');
 
 type Config = {
   deployAliases: Record<
@@ -56,10 +58,14 @@ if (isOne) {
   console.log('TenFieldActionDispatcher');
   zkApp = new TenFieldActionDispatcher(zkAppAddress);
   await TenFieldActionDispatcher.compile();
-} else if (isStruct) {
-  console.log('StructActionDispatcher');
-  zkApp = new StructActionDispatcher(zkAppAddress);
-  await StructActionDispatcher.compile();
+} else if (isBrokenStruct) {
+  console.log('BrokenStructActionDispatcher');
+  zkApp = new BrokenStructActionDispatcher(zkAppAddress);
+  await BrokenStructActionDispatcher.compile();
+} else if (isValidStruct) {
+  console.log('ValidStructActionDispatcher');
+  zkApp = new ValidStructActionDispatcher(zkAppAddress);
+  await ValidStructActionDispatcher.compile();
 } else {
   throw Error('Wrong contract name. Should be One, Three, Ten');
 }
