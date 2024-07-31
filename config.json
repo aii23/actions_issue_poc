@@ -5,7 +5,7 @@
       "networkId": "testnet",
       "url": "http://localhost:8080/graphql",
       "keyPath": "keys/brokenstruct_lightnet.json",
-      "feepayerKeyPath": "/home/alex/.cache/zkapp-cli/keys/lightnet1.json",
+      "feepayerKeyPath": "<your fee payer key>",
       "feepayerAlias": "lightnet1",
       "fee": "0.1",
       "smartContract": "BrokenStructActionDispatcher"
@@ -14,7 +14,7 @@
       "networkId": "testnet",
       "url": "http://localhost:8080/graphql",
       "keyPath": "keys/validstruct_lightnet.json",
-      "feepayerKeyPath": "/home/alex/.cache/zkapp-cli/keys/lightnet1.json",
+      "feepayerKeyPath": "<your fee payer key>",
       "feepayerAlias": "lightnet1",
       "fee": "0.1",
       "smartContract": "ValidStructActionDispatcher"
