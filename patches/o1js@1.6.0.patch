@@ -1,0 +1,14 @@
+diff --git a/dist/node/index.cjs b/dist/node/index.cjs
+index 3ba4f88b83269e5e3aa3a87caa0442f263111d71..24c2ff7de3837815962fa5d1a6f1466cf95c00e4 100644
+--- a/dist/node/index.cjs
++++ b/dist/node/index.cjs
+@@ -22915,6 +22915,9 @@ async function fetchActions2(accountInfo, graphqlEndpoint = networkConfig.archiv
+     let actionState = actionBlock.actionState.actionStateOne;
+     if (actionData.length === 0)
+       throw Error(`No action data was found for the account ${publicKey} with the latest action state ${actionState}`);
++
++    actionData = actionData.reverse();
++
+     let actionsByAccountUpdate = [];
+     let currentAccountUpdateId = "none";
+     let currentActions;
